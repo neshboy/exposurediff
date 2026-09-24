@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Local runtime state: authorization records, snapshots, audit log.
+# These are user/environment-specific and must never be committed.
+.exposurediff/
+coverage/
