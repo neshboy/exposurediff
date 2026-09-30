@@ -65,6 +65,8 @@ export interface ScanOptions {
   timeoutMs?: number;
   wordlist?: string[];
   tlsPort?: number;
+  /** Explicit opt-in to scan more than MAX_PORTS_WITHOUT_OVERRIDE ports (see portscan.ts). */
+  allowWideRange?: boolean;
 }
 
 export type ChangeKind =

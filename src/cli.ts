@@ -16,6 +16,7 @@ import { appendAuditLog } from "./auditlog.js";
 import { AuthorizationRefusedError, runScan } from "./scan.js";
 import { listSnapshotFiles, loadSnapshotFile } from "./snapshot.js";
 import { assertPortRangeAllowed } from "./portscan.js";
+import { hostOf } from "./netutil.js";
 
 interface ParsedArgs {
   positionals: string[];
@@ -127,9 +128,10 @@ async function main(): Promise<void> {
         process.exitCode = 1;
         return;
       }
+      const normalizedTarget = hostOf(target).toLowerCase();
       const count = revokeAuthorization(target);
-      appendAuditLog({ action: "authz-revoke", target, reason: `revoked ${count} record(s)` });
-      console.log(`Revoked ${count} authorization record(s) for "${target}".`);
+      appendAuditLog({ action: "authz-revoke", target: normalizedTarget, reason: `revoked ${count} record(s)` });
+      console.log(`Revoked ${count} authorization record(s) for "${normalizedTarget}".`);
       return;
     }
 
@@ -164,6 +166,7 @@ async function main(): Promise<void> {
         ports,
         concurrency: typeof concurrencyFlag === "string" ? Number(concurrencyFlag) : undefined,
         timeoutMs: typeof timeoutFlag === "string" ? Number(timeoutFlag) : undefined,
+        allowWideRange,
       });
 
       if (json) {
@@ -210,19 +213,20 @@ async function main(): Promise<void> {
       process.exitCode = 1;
       return;
     }
-    const files = listSnapshotFiles(target);
+    const normalizedTarget = hostOf(target).toLowerCase();
+    const files = listSnapshotFiles(normalizedTarget);
     if (files.length === 0) {
-      console.log(`No snapshots saved yet for "${target}". Run "exposurediff scan ${target}" first.`);
+      console.log(`No snapshots saved yet for "${normalizedTarget}". Run "exposurediff scan ${normalizedTarget}" first.`);
       return;
     }
     if (flags.get("json") === true) {
-      const snapshots = files.map((f) => loadSnapshotFile(target, f));
+      const snapshots = files.map((f) => loadSnapshotFile(normalizedTarget, f));
       console.log(JSON.stringify(snapshots, null, 2));
       return;
     }
-    console.log(`${files.length} saved snapshot(s) for "${target}":`);
+    console.log(`${files.length} saved snapshot(s) for "${normalizedTarget}":`);
     for (const f of files) {
-      const snap = loadSnapshotFile(target, f);
+      const snap = loadSnapshotFile(normalizedTarget, f);
       const openPorts = snap.ports.filter((p) => p.open).length;
       console.log(`  ${snap.takenAt}  subdomains=${snap.subdomains.length}  openPorts=${openPorts}`);
     }

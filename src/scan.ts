@@ -37,7 +37,7 @@ export interface ScanRunResult {
  * that without addressing the authorization requirement.
  */
 export async function runScan(target: string, options: ScanOptions = {}): Promise<ScanRunResult> {
-  const host = hostOf(target);
+  const host = hostOf(target).toLowerCase();
   const decision = await ensureAuthorized(target);
 
   if (!decision.allowed) {
@@ -61,7 +61,11 @@ export async function runScan(target: string, options: ScanOptions = {}): Promis
   const ports = options.ports ?? DEFAULT_PORTS;
 
   const portResultsByHost = await mapWithConcurrency(hostsToProbe, 4, (h) =>
-    scanPorts(h, ports, { concurrency: options.concurrency, timeoutMs: options.timeoutMs })
+    scanPorts(h, ports, {
+      concurrency: options.concurrency,
+      timeoutMs: options.timeoutMs,
+      allowWideRange: options.allowWideRange,
+    })
   );
   const portResults = portResultsByHost.flat();
 
